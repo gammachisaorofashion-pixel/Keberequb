@@ -4,7 +4,7 @@ import time
 
 TOKEN = os.environ.get("TOKEN")
 # እዚህ ላይ የእርስዎን (የአድሚኑን) የቴሌግራም ቻት መለያ ቁጥር (Admin Chat ID) ያስገቡ
-ADMIN_CHAT_ID = "YOUR_ADMIN_G_M_I_Q" 
+ADMIN_CHAT_ID = "YOUR_ADMIN_1672674682" 
 
 BASE_URL = f"https://api.telegram.org/bot{TOKEN}"
 
