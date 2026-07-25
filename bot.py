@@ -1,41 +1,43 @@
-import asyncio
-import logging
-from aiogram import Bot, Dispatcher, types, F
-from aiogram.filters import Command
+import os
+import requests
+import time
 
-# Telegram Bot Token (Replace with your actual token)
-TOKEN = "YOUR_BOT_TOKEN_HERE"
+TOKEN = os.environ.get("TOKEN")
+BASE_URL = f"https://api.telegram.org/bot{TOKEN}"
 
-logging.basicConfig(level=logging.INFO)
-bot = Bot(token=TOKEN)
-dp = Dispatcher()
+def get_updates(offset=None):
+    url = f"{BASE_URL}/getUpdates?timeout=30"
+    if offset:
+        url += f"&offset={offset}"
+    try:
+        response = requests.get(url)
+        return response.json()
+    except Exception as e:
+        print(e)
+        return None
 
-@dp.message(Command("start"))
-async def cmd_start(message: types.Message):
-    await message.answer("ሰላም! የኬበር እቁብ ቦት በሰላም ተጀምሯል።")
+def send_message(chat_id, text):
+    url = f"{BASE_URL}/sendMessage"
+    payload = {"chat_id": chat_id, "text": text}
+    requests.post(url, json=payload)
 
-# Receipt handling example
-@dp.message(F.photo)
-async def handle_receipt(message: types.Message):
-    user_id = message.from_user.id
-    user_name = message.from_user.full_name
-    photo_file_id = message.photo[-1].file_id
-    
-    # Approval keyboard
-    keyboard = types.InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                types.InlineKeyboardButton(
-                    text="✅ ክፍያው ተረጋግጧል (አክቲቭ አድርግ)",
-                    callback_data=f"approve_{user_id}"
-                )
-            ]
-        ]
-    )
-    await message.answer(f"ደረሰኝ ከ {user_name} ደርሷል። እባክዎ ያረጋግጡ።", reply_markup=keyboard)
-
-async def main():
-    await dp.start_polling(bot)
+def main():
+    print("Bot is starting...")
+    offset = None
+    while True:
+        updates = get_updates(offset)
+        if updates and "result" in updates:
+            for update in updates["result"]:
+                offset = update["update_id"] + 1
+                if "message" in update and "text" in update["message"]:
+                    chat_id = update["message"]["chat"]["id"]
+                    text = update["message"]["text"]
+                    
+                    if text == "/start":
+                        send_message(chat_id, "ሰላም! የኬበር (Keber) ቡድን ቦት በሰላም ተጀምሯል! 🚀")
+                    else:
+                        send_message(chat_id, f"መልእክትዎ ደርሶኛል: {text}")
+        time.sleep(1)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
